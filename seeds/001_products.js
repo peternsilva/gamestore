@@ -9,5 +9,10 @@ exports.seed = function(knex, Promise) {
         {id: 2, title: 'Blizzard Retro Scarf', price: 24.99},
         {id: 3, title: 'Sonic Toothbrush', price: 10.99}
       ]);
-    });
+    })
+    .then(() => {
+      return knex.raw(
+        "SELECT setval( 'products_id_seq', (SELECT MAX(id) FROM products));"
+      )
+    })
 };

@@ -23,5 +23,29 @@ router.get('/:userid', (req, res, next) => {
   })
 })
 
+// CREATE one users
+router.post('/', (req, res, next) => {
+  // Look for some provided Body data
+  // req.body
+  console.log('req.body', req.body)
+
+  // create new user in DB with KNEX
+  // SQL INSERT
+  knex('users')
+  .insert({name: req.body.name})
+  .returning('*')
+  .then((result) => {
+    let insertedRecord = result[0]
+    console.log('data', insertedRecord)
+    // conclude the route with res.send
+    res.send(insertedRecord)
+  })
+
+})
+
+// UPDATE one user
+
+// DELETE a user
+
 
 module.exports = router;
