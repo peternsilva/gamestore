@@ -5,11 +5,10 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var bcrypt = require('bcrypt')
 var knex = require('./knex')
-var jwt = require('jsonwebtoken')
 
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
-// var productsRouter = require('./routes/products');
+var productsRouter = require('./routes/products');
 // var ordersRouter = require('./routes/orders');
 
 var app = express();
@@ -26,7 +25,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
-// app.use('/products', productsRouter);
+app.use('/products', productsRouter);
 // app.use('/orders', ordersRouter);
 
 // REGISTER a user
@@ -62,6 +61,11 @@ app.post('/register', (req, res, next) => {
   })
 })
 
+// RENDERS the login page
+app.get('/login', (req, res, next) => {
+  res.render('login')
+})
+
 // LOGIN the user
 app.post('/login', (req, res, next) => {
   // take in email, password
@@ -76,7 +80,21 @@ app.post('/login', (req, res, next) => {
       // if all is good, create the token, and attach it as a cookie to the response
       if(passwordGood) {
         // create token
+        var payload = { userId: user.id }
+        var token = jwt.sign(payload, process.env.JWT_KEY, {
+          expiresIn: '7 days'  // Adds an exp field to the payload
+        })
         
+        // put the token into a cookie, attached to the response
+        res.cookie('token', token, {
+          httpOnly: true,
+          expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 7),  // 7 days
+          secure: app.get('env') === 'production'  // Set from the NODE_ENV
+        })
+        
+        res.redirect('/dashboard')
+      } else {
+        throw new Error('Wrong password')
       }
     } else {
       throw new Error('Could not find that user')
@@ -86,8 +104,15 @@ app.post('/login', (req, res, next) => {
     next(err)
   })
   
-  
 })
+
+// LOGOUT the user
+app.get('/logout', (req, res, next) => {
+  res.clearCookie('token')
+  res.redirect('/login')
+})
+
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
